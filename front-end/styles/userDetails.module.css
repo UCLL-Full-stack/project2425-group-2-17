@@ -1,0 +1,53 @@
+/* userDetails.module.css */
+
+.main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 6rem;
+    min-height: 100vh;
+  }
+  
+  .card {
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    width: 100%;
+    max-width: 600px;
+  }
+  
+  .cardTitle {
+    margin: 0 0 0.5rem 0;
+  }
+  
+  .cardText {
+    margin: 0.5rem 0;
+  }
+  
+  .heading {
+    margin-bottom: 2rem;
+  }
+  
+  .subHeading {
+    margin-top: 1.5rem;
+  }
+
+  /* userDetails.module.css */
+
+.homeButton {
+    background-color: #f35100;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-bottom: 20px;
+    font-size: 1rem;
+    transition: background-color 0.3s;
+  }
+  
+  .homeButton:hover {
+    background-color: #b50000;
+  }
+  
