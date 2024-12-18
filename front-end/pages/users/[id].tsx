@@ -54,6 +54,10 @@ const UserDetails: React.FC = () => {
         });
     }
   }, [id]);
+  const handleLogout = () => {
+    localStorage.removeItem('isLoggedIn');
+    router.push('/login');
+  };
 
     // This function navigates back to the home page
     const handleGoHome = () => {
@@ -131,7 +135,7 @@ const UserDetails: React.FC = () => {
           <p>Loading...</p>
         )}
 
-        <button onClick={handleGoHome} className={styles.homeButton}>Home</button>
+   <button className={styles.button} onClick={handleLogout}>Logout</button>
       </main>
     </>
   );

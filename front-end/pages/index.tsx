@@ -2,6 +2,7 @@ import Head from 'next/head';
 import styles from '@styles/home.module.css';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/router';
 
 // Sample User Data Type
 interface User {
@@ -11,6 +12,14 @@ interface User {
 }
 
 const Home: React.FC = () => {
+  const router = useRouter();
+
+  useEffect(() => {
+    const isLoggedIn = localStorage.getItem('isLoggedIn');
+    if (!isLoggedIn) {
+      router.push('/login');
+    }
+  }, []);
   const [users, setUsers] = useState<User[]>([]);
 
   useEffect(() => {
@@ -19,6 +28,11 @@ const Home: React.FC = () => {
       .then(response => response.json())
       .then(data => setUsers(data));
   }, []);
+  const handleLogout = () => {
+    localStorage.removeItem('isLoggedIn');
+    router.push('/login');
+  };
+  
 
   return (
     <>
@@ -43,6 +57,8 @@ const Home: React.FC = () => {
             </li>
           ))}
         </ul>
+        <button className={styles.button} onClick={handleLogout}>Logout</button>
+
       </main>
     </>
   );

@@ -1,12 +1,10 @@
 import { Expense } from './expense';
 import { Income } from './income';
-import { User } from './user';
 
 export class Budget {
     private _id: number;
     private _totalIncome: number;
     private _totalExpenses: number;
-  //  private _user: User; // Many-to-One relationship with User
     private _incomes?: Income[]; // One-to-Many relationship with Income
     private _expenses?: Expense[]; // One-to-Many relationship with Expense
 
@@ -14,16 +12,14 @@ export class Budget {
         id: number,
         totalIncome: number,
         totalExpenses: number,
-       // user: User,
         incomes?: Income[],
         expenses?: Expense[]
     ) {
         this._id = id;
         this._totalIncome = totalIncome;
         this._totalExpenses = totalExpenses;
-      //  this._user = user;
-        this._incomes = incomes;
-        this._expenses = expenses;
+        this._incomes = incomes || [];
+        this._expenses = expenses || [];
     }
 
     // Getter and Setter for id
@@ -50,20 +46,12 @@ export class Budget {
         this._totalExpenses = value;
     }
 
-    // Getter and Setter for user
-    // getUser(): User {
-    //     return this._user;
-    // }
-    // setUser(value: User): void {
-    //     this._user = value;
-    // }
-
     // Getter and Setter for incomes
     getIncomes(): Income[] | undefined {
         return this._incomes;
     }
     setIncomes(value: Income[] | undefined): void {
-        this._incomes = value;
+        this._incomes = value || [];
     }
 
     // Getter and Setter for expenses
@@ -71,6 +59,21 @@ export class Budget {
         return this._expenses;
     }
     setExpenses(value: Expense[] | undefined): void {
-        this._expenses = value;
+        this._expenses = value || [];
+    }
+
+    // Add Income
+    addIncome(income: Income): void {
+        if (!this._incomes) this._incomes = [];
+        this._incomes.push(income);
+        this._totalIncome += income.getAmount();
+    }
+
+    // Add Expense
+    addExpense(expense: Expense): void {
+        if (!this._expenses) this._expenses = [];
+        this._expenses.push(expense);
+        this._totalExpenses += expense.getAmount();
     }
 }
+

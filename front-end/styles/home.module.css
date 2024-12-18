@@ -65,4 +65,43 @@
     text-decoration: none;
     color: inherit;
   }
+
+  .loginForm {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 300px;
+    margin: auto;
+  }
+  
+  .loginForm label {
+    font-weight: bold;
+  }
+  
+  .loginForm input {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  
+  .error {
+    color: red;
+    font-size: 0.9rem;
+  }
+  
+  .button {
+    padding: 10px;
+    border: none;
+    background-color: #0070f3;
+    color: white;
+    font-size: 1rem;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+  
+  .button:hover {
+    background-color: #005bb5;
+  }
+  
+  
   
