@@ -1,54 +1,64 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
-
 async function main() {
-await prisma.user.deleteMany();
-await prisma.budget.deleteMany();
-await prisma.income.deleteMany();
-await prisma.expense.deleteMany();
-  // Create Users first so their IDs are available
+  // Clear existing data
+  await prisma.user.deleteMany();
+  await prisma.budget.deleteMany();
+  await prisma.income.deleteMany();
+  await prisma.expense.deleteMany();
+
+  // Hash passwords
+  const saltRounds = 10;
+
+  const user1Password = await bcrypt.hash("john", saltRounds);
+  const user2Password = await bcrypt.hash("tim", saltRounds);
+  const adminPassword = await bcrypt.hash("admin", saltRounds);
+  const managerPassword = await bcrypt.hash("manager", saltRounds);
+
+  // Create Users
   const user1 = await prisma.user.create({
     data: {
-        id: 1,
+      id: 1,
       name: "John Doe",
       email: "John.Doe@gmail.com",
       username: "john123",
-      password: "john",
+      password: user1Password,
       role: "user",
     },
   });
 
   const user2 = await prisma.user.create({
     data: {
-        id: 2,
+      id: 2,
       name: "Tim Doe",
       email: "tim.doe@gmail.com",
       username: "tim123",
-      password: "tim",
+      password: user2Password,
       role: "user",
     },
   });
 
   const admin = await prisma.user.create({
     data: {
-        id: 3,
+      id: 3,
       name: "Admin",
       email: "admin@example.com",
       username: "admin",
-      password: "admin",
+      password: adminPassword,
       role: "admin",
     },
   });
 
   const manager = await prisma.user.create({
     data: {
-        id: 4,
-      name: "Mary Toe",
-      email: "Mary.Toe@gmail.com",
+      id: 4,
+      name: "Manager",
+      email: "Manager@gmail.com",
       username: "manager",
-      password: "manager",
+      password: managerPassword,
       role: "manager",
     },
   });
@@ -59,20 +69,19 @@ await prisma.expense.deleteMany();
   const categoryRent = await prisma.category.create({ data: { name: "Rent" } });
   const categoryGroceries = await prisma.category.create({ data: { name: "Groceries" } });
 
-
   // Budgets
   const budget1 = await prisma.budget.create({
     data: {
-      income: 0, // Placeholder
-      expense: 0, // Placeholder
+      income: 0,
+      expense: 0,
       userId: user1.id,
     },
   });
 
   const budget2 = await prisma.budget.create({
     data: {
-      income: 0, // Placeholder
-      expense: 0, // Placeholder
+      income: 0,
+      expense: 0,
       userId: user2.id,
     },
   });
@@ -83,7 +92,7 @@ await prisma.expense.deleteMany();
       amount: 1000,
       date: new Date("2024-10-05"),
       categoryId: categoryRent.id,
-      budgetId: budget1.id, // Link to Budget1
+      budgetId: budget1.id,
     },
   });
 
@@ -92,7 +101,7 @@ await prisma.expense.deleteMany();
       amount: 500,
       date: new Date("2024-10-15"),
       categoryId: categoryGroceries.id,
-      budgetId: budget2.id, // Link to Budget2
+      budgetId: budget2.id,
     },
   });
 
@@ -102,7 +111,7 @@ await prisma.expense.deleteMany();
       amount: 5000,
       date: new Date("2024-10-01"),
       categoryId: categorySalary.id,
-      budgetId: budget1.id, // Link to Budget1
+      budgetId: budget1.id,
     },
   });
 
@@ -111,11 +120,11 @@ await prisma.expense.deleteMany();
       amount: 1500,
       date: new Date("2024-10-10"),
       categoryId: categoryFreelance.id,
-      budgetId: budget2.id, // Link to Budget2
+      budgetId: budget2.id,
     },
   });
 
-  // Update Budgets to Fetch Incomes and Expenses
+  // Update Budgets
   const updatedBudget1 = await prisma.budget.update({
     where: { id: budget1.id },
     data: {
@@ -136,7 +145,6 @@ await prisma.expense.deleteMany();
 
   console.log("Updated Budget1:", updatedBudget1);
   console.log("Updated Budget2:", updatedBudget2);
-
 }
 
 main()

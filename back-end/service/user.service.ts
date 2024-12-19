@@ -4,6 +4,7 @@ import {Budget as BudgetModel} from '../model/budget'
 import { Income } from '../model/income';
 import { Expense } from '../model/expense';
 import { Category } from '../model/category'; // Import your Category class
+import bcrypt from 'bcrypt';
 
 //const prisma = new PrismaClient();
 const prisma = new PrismaClient({
@@ -138,12 +139,17 @@ const deleteUser = async (id: number): Promise<void> => {
 
 
 const addAUser = async (userData: any): Promise<UserModel> => {
+    const saltRounds = 10; // Number of salt rounds for bcrypt
+
+    // Hash the user's password
+    const hashedPassword = await bcrypt.hash(userData.password, saltRounds);
+
     // Map the plain input data to an instance of UserModel
     const user = new UserModel(
         userData.name,
         userData.email,
         userData.username,
-        userData.password,
+        hashedPassword, // Use the hashed password
         userData.role || 'user',
         userData.budgets?.map(
             (budget: any) =>
@@ -177,7 +183,7 @@ const addAUser = async (userData: any): Promise<UserModel> => {
             name: user.getName(),
             email: user.getEmail(),
             username: user.getUsername(),
-            password: user.getPassword(),
+            password: hashedPassword, // Store the hashed password
             role: user.getRole(),
             Budget: {
                 create: user.getBudgets()?.map((budget) => ({
@@ -196,7 +202,7 @@ const addAUser = async (userData: any): Promise<UserModel> => {
         newUser.name,
         newUser.email,
         newUser.username,
-        newUser.password,
+        newUser.password, // This will still be hashed in the database
         newUser.role,
         newUser.Budget.map(
             (budget) =>
@@ -209,7 +215,6 @@ const addAUser = async (userData: any): Promise<UserModel> => {
                 )
         )
     );
-
 };
 
 

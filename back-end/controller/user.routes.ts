@@ -1,6 +1,7 @@
 import express, { NextFunction, Request, Response } from 'express';
 import userService from '../service/user.service';
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 const router = express.Router();
@@ -130,16 +131,24 @@ userRouter.post('/login', async (req: Request, res: Response) => {
     const { username, password } = req.body;
 
     try {
-        // Query the database
+        // Query the database for the user by username
         const user = await prisma.user.findFirst({
-            where: { username, password },
+            where: { username },
         });
 
+        // Check if user exists
         if (!user) {
             return res.status(401).json({ error: 'Invalid username or password.' });
         }
 
-        // Return user data (exclude sensitive info)
+        // Compare the hashed password with the plaintext password
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+
+        if (!isPasswordValid) {
+            return res.status(401).json({ error: 'Invalid username or password.' });
+        }
+
+        // Return user data (excluding the hashed password)
         res.json({
             id: user.id,
             name: user.name,
@@ -151,6 +160,7 @@ userRouter.post('/login', async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
+
 
 
 /**
