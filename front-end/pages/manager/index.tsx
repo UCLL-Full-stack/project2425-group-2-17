@@ -76,8 +76,10 @@ const Home: React.FC = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main className={styles.main}>
-        <h1>Welcome to BudgetMate!</h1>
+        <h1>Welcome to BudgetMate, Manager!</h1>
+        <h2>A manager can edit a user, if you want to add or delete a user, you need to have admin rights</h2>
         <div className={styles.description}>
+          <br></br>
           <p>Below is the list of all users:</p>
         </div>
         <ul className={styles.userList}>
@@ -106,7 +108,7 @@ const Home: React.FC = () => {
                     <p>{user.email}</p>
                   </Link>
                   <button onClick={() => setEditingUser(user)}>Edit</button>
-                  <button onClick={() => handleDelete(user.id)}>Delete</button>
+                  {/* <button onClick={() => handleDelete(user.id)}>Delete</button> */}
                 </div>
               )}
             </li>

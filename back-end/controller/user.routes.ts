@@ -1,5 +1,9 @@
 import express, { NextFunction, Request, Response } from 'express';
 import userService from '../service/user.service';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+const router = express.Router();
 
 
 /**
@@ -58,6 +62,96 @@ userRouter.get('/', async (req: Request, res: Response, next: NextFunction) => {
         next(error);
     }
 });
+/**
+ * @swagger
+ * /users/login:
+ *   post:
+ *     summary: Login a user
+ *     tags: [Users]
+ *     description: Authenticate a user by providing their username and password.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - username
+ *               - password
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 example: "john123"
+ *               password:
+ *                 type: string
+ *                 example: "john"
+ *     responses:
+ *       200:
+ *         description: Successfully logged in. Returns user details.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *                   example: 1
+ *                 name:
+ *                   type: string
+ *                   example: "John Doe"
+ *                 email:
+ *                   type: string
+ *                   example: "john.doe@example.com"
+ *                 role:
+ *                   type: string
+ *                   example: "user"
+ *       401:
+ *         description: Invalid username or password.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: "Invalid username or password."
+ *       500:
+ *         description: Internal Server Error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: "Internal Server Error."
+ */
+userRouter.post('/login', async (req: Request, res: Response) => {
+    const { username, password } = req.body;
+
+    try {
+        // Query the database
+        const user = await prisma.user.findFirst({
+            where: { username, password },
+        });
+
+        if (!user) {
+            return res.status(401).json({ error: 'Invalid username or password.' });
+        }
+
+        // Return user data (exclude sensitive info)
+        res.json({
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+        });
+    } catch (err) {
+        console.error('Login Error:', err);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
 
 /**
  * @swagger
@@ -132,16 +226,16 @@ userRouter.delete('/:id', async (req: Request, res: Response, next: NextFunction
  *             properties:
  *               name:
  *                 type: string
- *                 example: "Tim Doe"
+ *                 example: "example Doe"
  *               email:
  *                 type: string
- *                 example: "tim.doe@gmail.com"
+ *                 example: "example.doe@gmail.com"
  *               username:
  *                 type: string
- *                 example: "tim123"
+ *                 example: "example"
  *               password:
  *                 type: string
- *                 example: "tim"
+ *                 example: "example"
  *               role:
  *                 type: string
  *                 example: "user"
@@ -239,3 +333,66 @@ userRouter.post('/income', async (req: Request, res: Response, next: NextFunctio
         next(error);
     }
 });
+
+/**
+ * @swagger
+ * /users/{id}:
+ *   put:
+ *     summary: Update a user's name and email by ID
+ *     tags: [Users]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: The user ID to update
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: "Updated Name"
+ *               email:
+ *                 type: string
+ *                 example: "updated.email@example.com"
+ *     responses:
+ *       200:
+ *         description: User successfully updated
+ *       400:
+ *         description: Invalid request data
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Server error
+ */
+userRouter.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
+    const { id } = req.params;
+    const { name, email } = req.body;
+
+    try {
+        // Validate input
+        if (!name || !email) {
+            return res.status(400).json({ error: 'Name and email are required.' });
+        }
+
+        // Update the user
+        const updatedUser = await userService.updateUserById(Number(id), { name, email });
+
+        if (!updatedUser) {
+            return res.status(404).json({ error: `User with ID ${id} not found.` });
+        }
+
+        res.status(200).json(updatedUser);
+    } catch (error) {
+        next(error);
+    }
+});
+
+
+
+

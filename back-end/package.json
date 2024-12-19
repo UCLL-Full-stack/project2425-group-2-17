@@ -6,12 +6,15 @@
     "license": "ISC",
     "main": "app.ts",
     "prisma": {
-        "schema": "repository/prisma/schema.prisma"
+        "schema": "repository/prisma/schema.prisma",
+        "seed": "ts-node repository/prisma/seed.ts"
     },
     "scripts": {
         "test": "jest",
         "start": "nodemon -L app.ts --delay 3"
     },
+   
+
     "nodemonConfig": {
         "ext": "ts",
         "delay": "3",

@@ -10,7 +10,7 @@ interface User {
   name: string;
   email: string;
   username: string;
-  password: string;
+  password?: string; // Password is optional here, as we won't display it
   role: string;
 }
 
@@ -18,8 +18,7 @@ const Home: React.FC = () => {
   const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [newUser, setNewUser] = useState<User>({
-    id: 0,
+  const [newUser, setNewUser] = useState<Omit<User, 'id'>>({
     name: '',
     email: '',
     username: '',
@@ -27,93 +26,127 @@ const Home: React.FC = () => {
     role: 'user',
   });
 
-  // Redirect to login if not logged in
+  // Redirect to login if not logged in or unauthorized
   useEffect(() => {
     const isLoggedIn = localStorage.getItem('isLoggedIn');
-    if (!isLoggedIn) {
+    const userRole = localStorage.getItem('userRole');
+
+    if (!isLoggedIn ) {
       router.push('/login');
     }
-  }, []);
+  }, [router]);
 
   // Fetch all users
+  const fetchUsers = async () => {
+    try {
+      const response = await fetch('http://localhost:3000/users');
+      if (!response.ok) {
+        throw new Error('Failed to fetch users');
+      }
+      const data = await response.json();
+      setUsers(data);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
   }, []);
 
-  const fetchUsers = () => {
-    fetch('http://localhost:3000/users')
-      .then((response) => response.json())
-      .then((data) => setUsers(data))
-      .catch((err) => console.error('Failed to fetch users:', err));
-  };
-
-  // Add a new user
   const handleAddUser = async () => {
-    if (!newUser.name || !newUser.email || !newUser.username || !newUser.password) {
-      alert("All fields are required!");
-      return;
+    if (!newUser.name?.trim() || !newUser.email?.trim() || !newUser.username?.trim() || !newUser.password?.trim()) {
+        alert('All fields are required!');
+        return;
     }
-  
+
     try {
-      const response = await fetch('http://localhost:3000/users', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: newUser.name,
-          email: newUser.email,
-          username: newUser.username,
-          password: newUser.password,
-          role: newUser.role || 'user',
-        }),
-      });
-  
-      if (!response.ok) {
-        throw new Error('Failed to add user');
-      }
-  
-      setNewUser({
-        id: 0,
-        name: '',
-        email: '',
-        username: '',
-        password: '',
-        role: 'user',
-      }); // Reset form
-  
-      fetchUsers(); // Fetch the updated list of users
+        console.log('Attempting to add user:', newUser);
+
+        const response = await fetch('http://localhost:3000/users', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                name: newUser.name.trim(),
+                email: newUser.email.trim(),
+                username: newUser.username.trim(),
+                password: newUser.password.trim(),
+                role: newUser.role || 'user', // Ensure role defaults to 'user' if empty
+            }),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error('Server error response:', errorData);
+            alert(`Failed to add user: ${errorData.error || 'Unknown error'}`);
+            return;
+        }
+
+        const result = await response.json();
+        console.log('User added successfully:', result);
+       
+
+        alert('User added successfully!');
+        setNewUser({
+            name: '',
+            email: '',
+            username: '',
+            password: '',
+            role: 'user',
+        }); // Reset the form
+        fetchUsers(); // Refresh the user list
     } catch (error) {
-      console.error('Failed to add new user:', error);
+        console.error('Error adding user:', error);
+        alert('Failed to add user. Please try again.');
     }
-  };
-  
+};
+
+
 
   // Delete a user
   const handleDelete = async (userId: number) => {
     try {
-      await fetch(`http://localhost:3000/users/${userId}`, { method: 'DELETE' });
-      fetchUsers();
+      const response = await fetch(`http://localhost:3000/users/${userId}`, { method: 'DELETE' });
+      if (!response.ok) {
+        throw new Error(`Failed to delete user with ID ${userId}`);
+      }
+      fetchUsers(); // Refresh users list
     } catch (error) {
-      console.error(`Failed to delete user ${userId}:`, error);
+      console.error(`Error deleting user ${userId}:`, error);
     }
   };
 
   // Save edited user
-  const handleSave = async (user: User) => {
+  const handleSave = async () => {
+    if (!editingUser) return;
+
     try {
-      await fetch(`http://localhost:3000/users/${user.id}`, {
+      const response = await fetch(`http://localhost:3000/users/${editingUser.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(user),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: editingUser.name,
+          email: editingUser.email,
+        }),
       });
-      setEditingUser(null);
-      fetchUsers();
+
+      if (!response.ok) {
+        throw new Error('Failed to save user');
+      }
+
+      setEditingUser(null); // Exit edit mode
+      fetchUsers(); // Refresh users list
     } catch (error) {
-      console.error(`Failed to update user ${user.id}:`, error);
+      console.error('Error saving user:', error);
     }
   };
 
+  // Logout
   const handleLogout = () => {
     localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('userRole');
     router.push('/login');
   };
 
@@ -126,7 +159,8 @@ const Home: React.FC = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main className={styles.main}>
-        <h1>Welcome to BudgetMate!</h1>
+        <h1>Welcome to BudgetMate, Admin!</h1>
+        <h2>An admin can delete or add a user or a Manager</h2>
         <div className={styles.description}>
           <p>Below is the list of all users:</p>
         </div>
@@ -162,9 +196,9 @@ const Home: React.FC = () => {
             value={newUser.role}
             onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
           >
-            <option value="user">user</option>
-            <option value="admin">admin</option>
-            <option value="admin">manager</option>
+            <option value="user">User</option>
+            <option value="manager">Manager</option>
+            <option value="admin">Admin</option>
           </select>
           <button onClick={handleAddUser}>Add User</button>
         </div>
@@ -185,7 +219,7 @@ const Home: React.FC = () => {
                     value={editingUser.email}
                     onChange={(e) => setEditingUser({ ...editingUser, email: e.target.value })}
                   />
-                  <button onClick={() => handleSave(editingUser)}>Save</button>
+                  <button onClick={handleSave}>Save</button>
                   <button onClick={() => setEditingUser(null)}>Cancel</button>
                 </div>
               ) : (
@@ -211,5 +245,3 @@ const Home: React.FC = () => {
 };
 
 export default Home;
-
-

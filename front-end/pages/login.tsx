@@ -2,34 +2,43 @@ import { useState } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import styles from "@styles/home.module.css";
-import userService from "../../back-end/service/user.service";
 
 
-const Login: React.FC = () => {
+
+const Login = () => {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const router = useRouter();
 
-  // State
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const handleLogin = async (e: React.FormEvent) => {
+      e.preventDefault();
 
-  // Login handler
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
+      try {
+          const response = await fetch('http://localhost:3000/users/login', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ username, password }),
+          });
 
-    const matchedUser = userService.getUserByUsernameAndPassword(username, password);
+          if (!response.ok) {
+              throw new Error('Invalid username or password.');
+          }
 
-    if (matchedUser) {
-      localStorage.setItem("isLoggedIn", "true");
-      localStorage.setItem("userId", `${matchedUser.getId()}`);
-      localStorage.setItem("role", matchedUser.getRole());
+          const user = await response.json();
 
-      if (matchedUser.getRole() === "user") router.push("/user");
-      else if (matchedUser.getRole() === "admin") router.push("/admin");
-      else if (matchedUser.getRole() === "manager") router.push("/manager");
-    } else {
-      setError("Invalid username or password.");
-    }
+          // Save user info to localStorage
+          localStorage.setItem('isLoggedIn', 'true');
+          localStorage.setItem('userId', user.id);
+          localStorage.setItem('role', user.role);
+
+          // Redirect based on role
+          if (user.role === 'user') router.push('/user');
+          else if (user.role === 'admin') router.push('/admin');
+          else if (user.role === 'manager') router.push('/manager');
+      } catch (err: any) {
+          setError(err.message);
+      }
   };
 
   return (

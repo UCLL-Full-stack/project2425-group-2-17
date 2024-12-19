@@ -1,0 +1,64 @@
+// prisma/schema.prisma
+
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql" // Use your preferred database
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       Int      @id 
+  name     String
+  email    String   @unique
+  username String   @unique
+  password String
+  role     String
+
+  Budget Budget[]
+}
+
+model Budget {
+  id       Int       @id @default(autoincrement())
+  income   Float
+  expense  Float
+  incomes  Income[]
+  expenses Expense[]
+  userId   Int
+  user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+}
+
+model Income {
+  id          Int        @id @default(autoincrement())
+  amount      Float
+  date        DateTime
+  userId      Int?
+  categoryId  Int?
+  budgetId    Int
+  budget      Budget     @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  category    Category?  @relation(fields: [categoryId], references: [id])
+}
+
+model Expense {
+  id          Int        @id @default(autoincrement())
+  amount      Float
+  date        DateTime
+  userId      Int?
+  categoryId  Int?
+  budgetId    Int
+  budget      Budget     @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  category    Category?  @relation(fields: [categoryId], references: [id])
+}
+
+model Category {
+  id    Int     @id @default(autoincrement())
+  name  String  @unique
+
+  Expense Expense[]
+
+  Income Income[]
+}
