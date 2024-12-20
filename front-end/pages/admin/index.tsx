@@ -14,6 +14,22 @@ interface User {
   role: string;
 }
 
+// Utility function to send requests with token
+const fetchWithToken = async (url: string, options: RequestInit = {}) => {
+  const token = localStorage.getItem('token');
+  if (!token) throw new Error('No token found. Please login.');
+
+  const headers = {
+    ...options.headers,
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json',
+  };
+
+  const response = await fetch(url, { ...options, headers });
+  if (!response.ok) throw new Error(await response.text());
+  return response.json();
+};
+
 const Home: React.FC = () => {
   const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
@@ -28,10 +44,8 @@ const Home: React.FC = () => {
 
   // Redirect to login if not logged in or unauthorized
   useEffect(() => {
-    const isLoggedIn = localStorage.getItem('isLoggedIn');
-    const userRole = localStorage.getItem('userRole');
-
-    if (!isLoggedIn ) {
+    const token = localStorage.getItem('token');
+    if (!token) {
       router.push('/login');
     }
   }, [router]);
@@ -39,14 +53,11 @@ const Home: React.FC = () => {
   // Fetch all users
   const fetchUsers = async () => {
     try {
-      const response = await fetch('http://localhost:3000/users');
-      if (!response.ok) {
-        throw new Error('Failed to fetch users');
-      }
-      const data = await response.json();
+      const data = await fetchWithToken('http://localhost:3000/users');
       setUsers(data);
     } catch (error) {
       console.error('Error fetching users:', error);
+      setUsers([]);
     }
   };
 
@@ -56,60 +67,64 @@ const Home: React.FC = () => {
 
   const handleAddUser = async () => {
     if (!newUser.name?.trim() || !newUser.email?.trim() || !newUser.username?.trim() || !newUser.password?.trim()) {
-        alert('All fields are required!');
-        return;
+      alert('All fields are required!');
+      return;
     }
-
+  
     try {
-        console.log('Attempting to add user:', newUser);
-
-        const response = await fetch('http://localhost:3000/users', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                name: newUser.name.trim(),
-                email: newUser.email.trim(),
-                username: newUser.username.trim(),
-                password: newUser.password.trim(),
-                role: newUser.role || 'user', // Ensure role defaults to 'user' if empty
-            }),
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error('Server error response:', errorData);
-            alert(`Failed to add user: ${errorData.error || 'Unknown error'}`);
-            return;
-        }
-
-        const result = await response.json();
-        console.log('User added successfully:', result);
-       
-
-        alert('User added successfully!');
-        setNewUser({
-            name: '',
-            email: '',
-            username: '',
-            password: '',
-            role: 'user',
-        }); // Reset the form
-        fetchUsers(); // Refresh the user list
+      console.log('Attempting to add user:', newUser);
+  
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authorization token found.');
+      }
+  
+      const response = await fetch('http://localhost:3000/users', {
+        method: 'PUT', // Change from POST to PUT
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`, // Add token for authorization
+        },
+        body: JSON.stringify({
+          name: newUser.name.trim(),
+          email: newUser.email.trim(),
+          username: newUser.username.trim(),
+          password: newUser.password.trim(),
+          role: newUser.role || 'user', // Default role if not provided
+        }),
+      });
+  
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error('Failed to add user');
+      }
+  
+      const result = await response.json();
+      console.log('User added successfully:', result);
+  
+      alert('User added successfully!');
+      setNewUser({
+        name: '',
+        email: '',
+        username: '',
+        password: '',
+        role: 'user',
+      }); // Reset the form
+      fetchUsers(); // Refresh the user list
     } catch (error) {
-        console.error('Error adding user:', error);
-        alert('Failed to add user. Please try again.');
+      console.error('Error adding user:', error);
+      alert('Failed to add user. Please try again.');
     }
-};
+  };
+  
 
 
 
   // Delete a user
   const handleDelete = async (userId: number) => {
     try {
-      const response = await fetch(`http://localhost:3000/users/${userId}`, { method: 'DELETE' });
-      if (!response.ok) {
-        throw new Error(`Failed to delete user with ID ${userId}`);
-      }
+      await fetchWithToken(`http://localhost:3000/users/${userId}`, { method: 'DELETE' });
       fetchUsers(); // Refresh users list
     } catch (error) {
       console.error(`Error deleting user ${userId}:`, error);
@@ -121,21 +136,13 @@ const Home: React.FC = () => {
     if (!editingUser) return;
 
     try {
-      const response = await fetch(`http://localhost:3000/users/${editingUser.id}`, {
+      await fetchWithToken(`http://localhost:3000/users/${editingUser.id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           name: editingUser.name,
           email: editingUser.email,
         }),
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to save user');
-      }
-
       setEditingUser(null); // Exit edit mode
       fetchUsers(); // Refresh users list
     } catch (error) {
@@ -145,8 +152,7 @@ const Home: React.FC = () => {
 
   // Logout
   const handleLogout = () => {
-    localStorage.removeItem('isLoggedIn');
-    localStorage.removeItem('userRole');
+    localStorage.removeItem('token');
     router.push('/login');
   };
 

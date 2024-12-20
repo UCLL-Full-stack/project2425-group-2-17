@@ -5,11 +5,62 @@ import { Income } from '../model/income';
 import { Expense } from '../model/expense';
 import { Category } from '../model/category'; // Import your Category class
 import bcrypt from 'bcrypt';
+import { AuthenticationResponse } from '../types/index';
+
+
+import { generateJWTtoken } from '../util/jwt';
+
+
 
 //const prisma = new PrismaClient();
 const prisma = new PrismaClient({
     log: ['query', 'info', 'warn', 'error'], // Log all queries
 });
+
+const SECRET_KEY = '2154f4f52194f158c308f668a64a6f4a7f43f3f5ccc5cfeef6ff30fda34fa82'; 
+
+/**
+ * Authenticate a user by username and password.
+ * @param username - The username of the user.
+ * @param password - The password entered by the user.
+ * @returns An AuthenticationResponse containing username, token, and fullname.
+ */
+/**
+ * Authenticate a user by username and password.
+ * @param username - The username of the user.
+ * @param password - The password entered by the user.
+ * @returns An AuthenticationResponse containing username, token, and fullname.
+ */
+
+const authenticate = async (username: string, password: string): Promise<AuthenticationResponse > => {
+    // Find the user by username
+    const user = await prisma.user.findUnique({
+        where: { username },
+    });
+
+    // If user doesn't exist, throw an error
+    if (!user) {
+        throw new Error('Invalid username or password.');
+    }
+
+    // Compare the provided password with the stored hashed password
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordValid) {
+        throw new Error('Invalid username or password.');
+    }
+
+    // Generate a JWT token using the utility function
+    const token = generateJWTtoken(user.username);
+
+    // Return the authentication response
+    return {
+        username: user.username,
+        token,
+        fullname: user.name,
+    };
+};
+
 const getAllUsers = async (): Promise<any[]> => {
     // Fetch all users along with their budgets, incomes, and expenses
     const users = await prisma.user.findMany({
@@ -459,4 +510,5 @@ export default {
     addIncomeToAUser,
     addExpenseToAUser,
     updateUserById,
+    authenticate, // Add the authenticate function
 };

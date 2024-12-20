@@ -2,6 +2,7 @@ import express, { NextFunction, Request, Response } from 'express';
 import userService from '../service/user.service';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
+import { generateJWTtoken } from '../util/jwt';
 
 const prisma = new PrismaClient();
 const router = express.Router();
@@ -45,26 +46,6 @@ export const userRouter = express.Router();
 
 /**
  * @swagger
- * /users:
- *   get:
- *     summary: Retrieve a list of all users
- *     tags: [Users]
- *     responses:
- *       200:
- *         description: A list of users
- *       500:
- *         description: Server error
- */
-userRouter.get('/', async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const users = await userService.getAllUsers();
-        res.status(200).json(users);
-    } catch (error) {
-        next(error);
-    }
-});
-/**
- * @swagger
  * /users/login:
  *   post:
  *     summary: Login a user
@@ -88,7 +69,7 @@ userRouter.get('/', async (req: Request, res: Response, next: NextFunction) => {
  *                 example: "john"
  *     responses:
  *       200:
- *         description: Successfully logged in. Returns user details.
+ *         description: Successfully logged in. Returns a token and user details.
  *         content:
  *           application/json:
  *             schema:
@@ -97,15 +78,18 @@ userRouter.get('/', async (req: Request, res: Response, next: NextFunction) => {
  *                 id:
  *                   type: integer
  *                   example: 1
- *                 name:
+ *                 username:
+ *                   type: string
+ *                   example: "john123"
+ *                 fullname:
  *                   type: string
  *                   example: "John Doe"
- *                 email:
- *                   type: string
- *                   example: "john.doe@example.com"
  *                 role:
  *                   type: string
- *                   example: "user"
+ *                   example: "admin"
+ *                 token:
+ *                   type: string
+ *                   example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
  *       401:
  *         description: Invalid username or password.
  *         content:
@@ -134,32 +118,165 @@ userRouter.post('/login', async (req: Request, res: Response) => {
         // Query the database for the user by username
         const user = await prisma.user.findFirst({
             where: { username },
+            select: { id: true, username: true, name: true, password: true, role: true }, // Include 'id' and 'role'
         });
 
-        // Check if user exists
         if (!user) {
+            console.error('User not found');
             return res.status(401).json({ error: 'Invalid username or password.' });
         }
+
+        console.log('User found:', user);
 
         // Compare the hashed password with the plaintext password
         const isPasswordValid = await bcrypt.compare(password, user.password);
 
         if (!isPasswordValid) {
+            console.error('Password mismatch');
             return res.status(401).json({ error: 'Invalid username or password.' });
         }
 
-        // Return user data (excluding the hashed password)
-        res.json({
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            role: user.role,
+        // Generate a JWT (if applicable)
+        const token = generateJWTtoken(user.username);
+
+        // Return success response with token, user details, and ID
+        return res.status(200).json({
+            id: user.id, // Include user ID
+            username: user.username,
+            fullname: user.name,
+            role: user.role, // Include 'role' in the response
+            token,
         });
     } catch (err) {
         console.error('Login Error:', err);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
+
+
+/**
+ * @swagger
+ * /users:
+ *   get:
+ *     summary: Retrieve a list of all users
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: A list of users
+ *       500:
+ *         description: Server error
+ */
+userRouter.get('/', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const users = await userService.getAllUsers();
+        res.status(200).json(users);
+    } catch (error) {
+        next(error);
+    }
+});
+
+
+
+
+// /**
+//  * @swagger
+//  * /users/login:
+//  *   post:
+//  *     summary: Login a user
+//  *     tags: [Users]
+//  *     description: Authenticate a user by providing their username and password.
+//  *     requestBody:
+//  *       required: true
+//  *       content:
+//  *         application/json:
+//  *           schema:
+//  *             type: object
+//  *             required:
+//  *               - username
+//  *               - password
+//  *             properties:
+//  *               username:
+//  *                 type: string
+//  *                 example: "john123"
+//  *               password:
+//  *                 type: string
+//  *                 example: "john"
+//  *     responses:
+//  *       200:
+//  *         description: Successfully logged in. Returns user details.
+//  *         content:
+//  *           application/json:
+//  *             schema:
+//  *               type: object
+//  *               properties:
+//  *                 id:
+//  *                   type: integer
+//  *                   example: 1
+//  *                 name:
+//  *                   type: string
+//  *                   example: "John Doe"
+//  *                 email:
+//  *                   type: string
+//  *                   example: "john.doe@example.com"
+//  *                 role:
+//  *                   type: string
+//  *                   example: "user"
+//  *       401:
+//  *         description: Invalid username or password.
+//  *         content:
+//  *           application/json:
+//  *             schema:
+//  *               type: object
+//  *               properties:
+//  *                 error:
+//  *                   type: string
+//  *                   example: "Invalid username or password."
+//  *       500:
+//  *         description: Internal Server Error.
+//  *         content:
+//  *           application/json:
+//  *             schema:
+//  *               type: object
+//  *               properties:
+//  *                 error:
+//  *                   type: string
+//  *                   example: "Internal Server Error."
+//  */
+// userRouter.post('/login', async (req: Request, res: Response) => {
+//     const { username, password } = req.body;
+
+//     try {
+//         // Query the database for the user by username
+//         const user = await prisma.user.findFirst({
+//             where: { username },
+//         });
+
+//         // Check if user exists
+//         if (!user) {
+//             return res.status(401).json({ error: 'Invalid username or password.' });
+//         }
+
+//         // Compare the hashed password with the plaintext password
+//         const isPasswordValid = await bcrypt.compare(password, user.password);
+
+//         if (!isPasswordValid) {
+//             return res.status(401).json({ error: 'Invalid username or password.' });
+//         }
+
+//         // Return user data (excluding the hashed password)
+//         res.json({
+//             id: user.id,
+//             name: user.name,
+//             email: user.email,
+//             role: user.role,
+//         });
+//     } catch (err) {
+//         console.error('Login Error:', err);
+//         res.status(500).json({ error: 'Internal Server Error' });
+//     }
+// });
 
 
 

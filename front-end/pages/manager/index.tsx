@@ -11,6 +11,22 @@ interface User {
   email: string;
 }
 
+// Utility function to include the token in every request
+const fetchWithToken = async (url: string, options: RequestInit = {}) => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    throw new Error('No token found. Please login.');
+  }
+
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json',
+    ...options.headers,
+  };
+
+  return fetch(url, { ...options, headers });
+};
+
 const Home: React.FC = () => {
   const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
@@ -18,28 +34,41 @@ const Home: React.FC = () => {
 
   // Redirect to login if not logged in
   useEffect(() => {
-    const isLoggedIn = localStorage.getItem('isLoggedIn');
-    if (!isLoggedIn) {
+    const token = localStorage.getItem('token');
+    if (!token) {
       router.push('/login');
     }
-  }, []);
+  }, [router]);
 
   // Fetch all users
   useEffect(() => {
     fetchUsers();
   }, []);
 
-  const fetchUsers = () => {
-    fetch('http://localhost:3000/users')
-      .then(response => response.json())
-      .then(data => setUsers(data))
-      .catch(err => console.error("Failed to fetch users:", err));
+  const fetchUsers = async () => {
+    try {
+      const response = await fetchWithToken('http://localhost:3000/users', {
+        method: 'GET',
+      });
+
+      const data = await response.json();
+
+      // Check if response is an array
+      if (Array.isArray(data)) {
+        setUsers(data);
+      } else {
+        throw new Error('Response is not an array');
+      }
+    } catch (err) {
+      console.error('Failed to fetch users:', err);
+      setUsers([]); // Fallback to empty array
+    }
   };
 
   // Delete a user
   const handleDelete = async (userId: number) => {
     try {
-      await fetch(`http://localhost:3000/users/${userId}`, { method: 'DELETE' });
+      await fetchWithToken(`http://localhost:3000/users/${userId}`, { method: 'DELETE' });
       fetchUsers(); // Refresh user list after deletion
     } catch (error) {
       console.error(`Failed to delete user ${userId}:`, error);
@@ -49,9 +78,8 @@ const Home: React.FC = () => {
   // Save edited user
   const handleSave = async (user: User) => {
     try {
-      await fetch(`http://localhost:3000/users/${user.id}`, {
+      await fetchWithToken(`http://localhost:3000/users/${user.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(user),
       });
       setEditingUser(null); // Exit edit mode
@@ -63,7 +91,7 @@ const Home: React.FC = () => {
 
   // Logout function
   const handleLogout = () => {
-    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('token');
     router.push('/login');
   };
 
@@ -108,7 +136,7 @@ const Home: React.FC = () => {
                     <p>{user.email}</p>
                   </Link>
                   <button onClick={() => setEditingUser(user)}>Edit</button>
-                  {/* <button onClick={() => handleDelete(user.id)}>Delete</button> */}
+
                 </div>
               )}
             </li>

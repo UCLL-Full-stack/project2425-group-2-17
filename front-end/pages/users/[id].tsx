@@ -10,6 +10,7 @@ interface Category {
   _name: string;
 }
 
+
 interface Income {
   _id: number;
   _amount: number;
@@ -39,15 +40,31 @@ interface User {
   budgets: Budget[];
 }
 
-// Fetcher function for useSWR
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+// Centralized fetcher function for useSWR
+const fetcher = async (url: string) => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    throw new Error('No token found. Please log in again.');
+  }
+
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch data. Unauthorized or invalid token.');
+  }
+
+  return response.json();
+};
 
 const UserDetails: React.FC = () => {
   const router = useRouter();
   const { id } = router.query;
 
-  // Fetch user data with useSWR
-  const { data: user, mutate } = useSWR<User>(
+  const { data: user, error, mutate } = useSWR<User>(
     id ? `http://localhost:3000/users/${id}` : null,
     fetcher
   );
@@ -55,18 +72,21 @@ const UserDetails: React.FC = () => {
   const [income, setIncome] = useState({ amount: 0, category: '' });
   const [expense, setExpense] = useState({ amount: 0, category: '' });
 
-  // Check for user authentication with useEffect
   useEffect(() => {
-    const isLoggedIn = localStorage.getItem('isLoggedIn');
+    const token = localStorage.getItem('token');
     const storedUserId = localStorage.getItem('userId');
-
-    if (!isLoggedIn || storedUserId !== id) {
+    if (!token || !storedUserId || storedUserId !== id) {
       router.push('/login');
     }
   }, [id, router]);
 
-  // Handle adding income
   const handleAddIncome = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('You are not logged in!');
+      return;
+    }
+
     if (!income.amount || income.amount <= 0 || !income.category.trim()) {
       alert('Please provide a valid amount and category for income.');
       return;
@@ -75,7 +95,10 @@ const UserDetails: React.FC = () => {
     try {
       const response = await fetch(`http://localhost:3000/users/income`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({
           userId: Number(id),
           amount: income.amount,
@@ -83,20 +106,25 @@ const UserDetails: React.FC = () => {
         }),
       });
 
-      if (response.ok) {
-        alert('Income successfully added!');
-        setIncome({ amount: 0, category: '' });
-        mutate(); // Revalidate the SWR cache
-      } else {
-        alert('Failed to add income. Please try again.');
+      if (!response.ok) {
+        throw new Error('Failed to add income. Please check your inputs.');
       }
+
+      alert('Income successfully added!');
+      setIncome({ amount: 0, category: '' });
+      mutate();
     } catch (err) {
-      console.error('Error adding income:', err);
+      alert((err as Error).message);
     }
   };
 
-  // Handle adding expense
   const handleAddExpense = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('You are not logged in!');
+      return;
+    }
+
     if (!expense.amount || expense.amount <= 0 || !expense.category.trim()) {
       alert('Please provide a valid amount and category for expense.');
       return;
@@ -105,7 +133,10 @@ const UserDetails: React.FC = () => {
     try {
       const response = await fetch(`http://localhost:3000/users/expense`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({
           userId: Number(id),
           amount: expense.amount,
@@ -113,23 +144,31 @@ const UserDetails: React.FC = () => {
         }),
       });
 
-      if (response.ok) {
-        alert('Expense successfully added!');
-        setExpense({ amount: 0, category: '' });
-        mutate(); // Revalidate the SWR cache
-      } else {
-        alert('Failed to add expense. Please try again.');
+      if (!response.ok) {
+        throw new Error('Failed to add expense. Please check your inputs.');
       }
+
+      alert('Expense successfully added!');
+      setExpense({ amount: 0, category: '' });
+      mutate();
     } catch (err) {
-      console.error('Error adding expense:', err);
+      alert((err as Error).message);
     }
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('token');
     localStorage.removeItem('userId');
     router.push('/login');
   };
+
+  if (error) {
+    return <p>Error: {error.message}</p>;
+  }
+
+  if (!user) {
+    return <p>Loading...</p>;
+  }
 
   return (
     <>
@@ -249,5 +288,7 @@ const UserDetails: React.FC = () => {
     </>
   );
 };
+  
+
 
 export default UserDetails;

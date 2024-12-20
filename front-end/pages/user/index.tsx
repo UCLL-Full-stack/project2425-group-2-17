@@ -7,6 +7,7 @@ const Home: React.FC = () => {
   const router = useRouter();
 
   useEffect(() => {
+    const token = localStorage.getItem('token');
     // Check if the user is logged in and retrieve their userId
     const isLoggedIn = localStorage.getItem("isLoggedIn");
     const userId = localStorage.getItem("userId");

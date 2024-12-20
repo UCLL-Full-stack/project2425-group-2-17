@@ -5,6 +5,7 @@ import * as bodyParser from 'body-parser';
 import swaggerJSDoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 import { userRouter } from './controller/user.routes';
+import { expressjwt } from 'express-jwt';
 
 const app = express();
 dotenv.config();
@@ -13,6 +14,25 @@ const port = process.env.APP_PORT || 3000;
 // Middleware
 app.use(cors({ origin: 'http://localhost:8080' }));
 app.use(bodyParser.json());
+// JWT Secret and Allowed Paths
+const JWT_SECRET = '2154f4f52194f158c308f668a64a6f4a7f43f3f5ccc5cfeef6ff30fda34fa82';
+
+app.use(
+    expressjwt({
+        secret: JWT_SECRET,
+        algorithms: ['HS256'],
+    }).unless({
+        path: [
+            { url: '/api-docs', methods: ['GET'] }, // Allow the base Swagger UI path
+            { url: /^\/api-docs\/.*/, methods: ['GET'] }, // Allow subpaths under /api-docs/
+            '/users/login',
+            '/users/signup',
+            '/status'
+        ],
+    })
+);
+
+
 
 // Status Route
 app.get('/status', (req, res) => {
@@ -29,6 +49,20 @@ const swaggerOpts = {
             description: 'API for managing users, incomes, and expenses',
         },
         servers: [{ url: `http://localhost:${port}` }],
+        components: {
+            securitySchemes: {
+                bearerAuth: {
+                    type: 'http',
+                    scheme: 'bearer',
+                    bearerFormat: 'JWT',
+                },
+            },
+        },
+        security: [
+            {
+                bearerAuth: [],
+            },
+        ],
     },
     apis: ['./controller/*.ts'], // Adjust this to match your controller's path
 };

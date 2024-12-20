@@ -5,19 +5,20 @@ const Home = () => {
   const router = useRouter();
 
   useEffect(() => {
-    const isLoggedIn = localStorage.getItem('isLoggedIn');
-    if (!isLoggedIn) {
-      router.push('/login'); // Redirect to login if not logged in
-    } else {
-      router.push(`/users/${localStorage.getItem('userId')}`); // Redirect to user's page
-    }
+    const token = localStorage.getItem('token');
+  
+      // Redirect to login if no token exists
+      router.push('/login');
+    
   }, [router]);
 
   return (
     <div>
-      <h1>Redirecting...</h1>
+      <h1>Welcome to BudgetMate!</h1>
+      {/* You can add a loader or some other visual feedback here */}
     </div>
   );
 };
 
 export default Home;
+

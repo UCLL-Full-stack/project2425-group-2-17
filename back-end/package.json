@@ -1,7 +1,7 @@
 {
-    "name": "courses_api",
+    "name": "budgetmate_api",
     "version": "1.0.0",
-    "description": "Courses API",
+    "description": "BudgetMate_api",
     "author": "johanpck",
     "license": "ISC",
     "main": "app.ts",
@@ -29,7 +29,7 @@
         "date-fns": "^2.30.0",
         "dotenv": "^16.0.0",
         "express": "^4.18.0",
-        "express-jwt": "^8.4.1",
+        "express-jwt": "^8.5.1",
         "helmet": "^7.1.0",
         "jsonwebtoken": "^9.0.2",
         "swagger-jsdoc": "^6.2.0",
