@@ -13,8 +13,8 @@ async function main() {
   // Hash passwords
   const saltRounds = 10;
 
-  const user1Password = await bcrypt.hash("john", saltRounds);
-  const user2Password = await bcrypt.hash("tim", saltRounds);
+  const user1Password = await bcrypt.hash("john123", saltRounds);
+  const user2Password = await bcrypt.hash("tim123", saltRounds);
   const adminPassword = await bcrypt.hash("admin", saltRounds);
   const managerPassword = await bcrypt.hash("manager", saltRounds);
 
@@ -24,7 +24,7 @@ async function main() {
       id: 1,
       name: "John Doe",
       email: "John.Doe@gmail.com",
-      username: "john123",
+      username: "john",
       password: user1Password,
       role: "user",
     },
@@ -35,7 +35,7 @@ async function main() {
       id: 2,
       name: "Tim Doe",
       email: "tim.doe@gmail.com",
-      username: "tim123",
+      username: "tim",
       password: user2Password,
       role: "user",
     },
@@ -56,7 +56,7 @@ async function main() {
     data: {
       id: 4,
       name: "Manager",
-      email: "Manager@gmail.com",
+      email: "manager@gmail.com",
       username: "manager",
       password: managerPassword,
       role: "manager",
@@ -64,10 +64,10 @@ async function main() {
   });
 
   // Categories
-  const categorySalary = await prisma.category.create({ data: { name: "Salary" } });
-  const categoryFreelance = await prisma.category.create({ data: { name: "Freelance" } });
-  const categoryRent = await prisma.category.create({ data: { name: "Rent" } });
-  const categoryGroceries = await prisma.category.create({ data: { name: "Groceries" } });
+  const categoryOffice = await prisma.category.create({ data: { name: "Office" } });
+  const categoryStationary = await prisma.category.create({ data: { name: "Stationary" } });
+  const categoryFood = await prisma.category.create({ data: { name: "Food" } });
+  const categoryEvents = await prisma.category.create({ data: { name: "Events" } });
 
   // Budgets
   const budget1 = await prisma.budget.create({
@@ -91,7 +91,7 @@ async function main() {
     data: {
       amount: 1000,
       date: new Date("2024-10-05"),
-      categoryId: categoryRent.id,
+      categoryId: categoryStationary.id,
       budgetId: budget1.id,
     },
   });
@@ -100,7 +100,7 @@ async function main() {
     data: {
       amount: 500,
       date: new Date("2024-10-15"),
-      categoryId: categoryGroceries.id,
+      categoryId: categoryEvents.id,
       budgetId: budget2.id,
     },
   });
@@ -110,7 +110,7 @@ async function main() {
     data: {
       amount: 5000,
       date: new Date("2024-10-01"),
-      categoryId: categorySalary.id,
+      categoryId: categoryOffice.id,
       budgetId: budget1.id,
     },
   });
@@ -119,7 +119,7 @@ async function main() {
     data: {
       amount: 1500,
       date: new Date("2024-10-10"),
-      categoryId: categoryFreelance.id,
+      categoryId: categoryFood.id,
       budgetId: budget2.id,
     },
   });
