@@ -7,6 +7,7 @@
       "@types": ["types/index.ts"],
       "@styles/*": ["styles/*"]
     },
+    "types": ["jest", "@testing-library/jest-dom"],
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
@@ -27,6 +28,14 @@
     ],
     "strictNullChecks": true
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    "pages/**/*",
+    "components/**/*",
+    "test/**/*"
+  ],
   "exclude": ["node_modules"]
 }

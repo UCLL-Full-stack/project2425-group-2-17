@@ -63,10 +63,10 @@ export const userRouter = express.Router();
  *             properties:
  *               username:
  *                 type: string
- *                 example: "john123"
+ *                 example: "john"
  *               password:
  *                 type: string
- *                 example: "john"
+ *                 example: "john123"
  *     responses:
  *       200:
  *         description: Successfully logged in. Returns a token and user details.

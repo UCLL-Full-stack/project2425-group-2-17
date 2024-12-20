@@ -123,7 +123,7 @@ const Login = () => {
                 <td>manager</td>
                 <td>manager</td>
                 <td>manager</td>
-                <td>A manager can edit user details and view the expenses incurred by the user for the office.</td>
+                <td>A manager can edit user details.</td>
               </tr>
               <tr>
                 <td>admin</td>
