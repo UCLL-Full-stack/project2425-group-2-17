@@ -4,7 +4,7 @@
 To get started, open the Readme.md files in the analysis, back-end and front-end folders.
 
 BudgetMate is a straightforward budgeting app that allows users to track 
-their expenses. Users can add income and expense entries, categorize them, and view a 
+their expenses for offices. Users can add income and expense entries, categorize them, and view a 
 summary of their spending habits. The app provides a simple overview of how much 
 users have left in their monthly budget and highlights their top expense categories. 
 
